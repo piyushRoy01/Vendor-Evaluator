@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom enterprise scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
+
+/* Strict Enterprise Button & Form Styles (No pill buttons, crisp 4px/6px borders) */
+.btn-primary {
+  @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-corporate-900 hover:bg-corporate-800 border border-corporate-900 rounded focus:outline-none focus:ring-2 focus:ring-corporate-900 focus:ring-offset-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-corporate-800 bg-white hover:bg-corporate-100 border border-corporate-300 rounded focus:outline-none focus:ring-2 focus:ring-corporate-500 focus:ring-offset-1 transition-colors disabled:opacity-50 shadow-sm;
+}
+
+.btn-danger {
+  @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-red-700 hover:bg-red-800 border border-red-700 rounded focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-1 transition-colors shadow-sm;
+}
+
+.btn-success {
+  @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 border border-emerald-700 rounded focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-1 transition-colors shadow-sm;
+}
+
+.input-field {
+  @apply w-full px-3 py-2 text-sm bg-white border border-corporate-300 rounded text-corporate-900 placeholder-corporate-400 focus:outline-none focus:ring-1 focus:ring-corporate-900 focus:border-corporate-900 transition-colors disabled:bg-corporate-100 disabled:cursor-not-allowed;
+}
+
+.select-field {
+  @apply w-full px-3 py-2 text-sm bg-white border border-corporate-300 rounded text-corporate-900 focus:outline-none focus:ring-1 focus:ring-corporate-900 focus:border-corporate-900 transition-colors;
+}
+
+.table-header {
+  @apply px-4 py-3 text-left text-xs font-semibold text-corporate-600 uppercase tracking-wider bg-corporate-100 border-b border-corporate-200;
+}
+
+.table-cell {
+  @apply px-4 py-3 text-sm text-corporate-800 border-b border-corporate-200;
+}

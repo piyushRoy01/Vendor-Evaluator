@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  role         String        // "ADMIN" | "EIC" | "VENDOR"
+  isActive     Boolean       @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  adminProfile  AdminProfile?
+  eicMaster     EicMaster?
+  vendorMaster  VendorMaster?
+  auditLogs     AuditLog[]
+  notifications Notification[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model AdminProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  name       String
+  department String
+  mobile     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EicMaster {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  employeeId String   @unique // e.g. "EMP-EIC-101"
+  name       String
+  company    String
+  mobile     String
+  email      String
+  status     String   @default("ACTIVE") // "ACTIVE" | "INACTIVE"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contracts   PoLoaContract[]
+  evaluations Evaluation[]
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+model VendorMaster {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  vendorCode        String   @unique // e.g. "VND-2024-001"
+  vendorName        String
+  pan               String
+  gstn              String
+  email             String
+  mobile            String
+  bankAccountNumber String
+  ifscCode          String
+  typeOfFirm        String   // "PROPRIETORSHIP" | "PARTNERSHIP" | "PRIVATE_LIMITED" | "PUBLIC_LIMITED" | "LLP" | "PSU" | "JOINT_VENTURE"
+  status            String   @default("ACTIVE") // "ACTIVE" | "INACTIVE" | "BLACKLISTED" | "SUSPENDED"
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contracts   PoLoaContract[]
+  evaluations Evaluation[]
+
+  @@index([vendorCode])
+  @@index([pan])
+  @@index([gstn])
+  @@index([status])
+}
+
+model PoLoaContract {
+  id                 String   @id @default(uuid())
+  poNumber           String   @unique // e.g. "PO/2026/PLANT-A/0192"
+  contractType       String   // "PO" | "LOA"
+  poDate             DateTime
+  completionDate     DateTime
+  poValueWithoutTax  Float
+  poValueWithTax     Float
+  plantCode          String   // e.g. "PLANT-01"
+  vendorId           String
+  eicId              String
+  contractStatus     String   @default("ACTIVE") // "DRAFT" | "ACTIVE" | "NEAR_COMPLETION" | "COMPLETED" | "EXPIRED" | "CANCELLED" | "SUSPENDED"
+  description        String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  vendor      VendorMaster @relation(fields: [vendorId], references: [id])
+  eic         EicMaster    @relation(fields: [eicId], references: [id])
+  evaluations Evaluation[]
+
+  @@index([poNumber])
+  @@index([vendorId])
+  @@index([eicId])
+  @@index([plantCode])
+  @@index([contractStatus])
+}
+
+model EvaluationCriteria {
+  id          String   @id @default(uuid())
+  name        String   // e.g. "Quality of Work"
+  code        String   @unique
+  description String
+  weight      Float    // e.g. 25.0
+  maxScore    Int      @default(5)
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  scores EvaluationScore[]
+
+  @@index([code])
+  @@index([isActive])
+}
+
+model Evaluation {
+  id                   String    @id @default(uuid())
+  evaluationNumber     String    @unique // e.g. "EVL-2026-00042"
+  poId                 String
+  eicId                String
+  vendorId             String
+  evaluationDate       DateTime  @default(now())
+  periodStart          DateTime
+  periodEnd            DateTime
+  totalWeightedScore   Float     @default(0.0)
+  percentage           Float     @default(0.0)
+  ratingGrade          String    // "EXCELLENT" | "VERY_GOOD" | "GOOD" | "SATISFACTORY" | "UNSATISFACTORY"
+  status               String    @default("DRAFT") // "DRAFT" | "IN_PROGRESS" | "SUBMITTED" | "REVIEWED" | "APPROVED" | "RETURNED" | "REVISED" | "LOCKED"
+  remarks              String?
+  observations         String?
+  submittedBy          String?
+  submittedAt          DateTime?
+  reviewedBy           String?
+  reviewedAt           DateTime?
+  returnReason         String?
+  version              Int       @default(1)
+  previousEvaluationId String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  contract PoLoaContract     @relation(fields: [poId], references: [id])
+  eic      EicMaster         @relation(fields: [eicId], references: [id])
+  vendor   VendorMaster      @relation(fields: [vendorId], references: [id])
+  scores   EvaluationScore[]
+
+  @@index([evaluationNumber])
+  @@index([poId])
+  @@index([eicId])
+  @@index([vendorId])
+  @@index([status])
+}
+
+model EvaluationScore {
+  id                    String   @id @default(uuid())
+  evaluationId          String
+  criterionId           String
+  criterionNameSnapshot String
+  weightSnapshot        Float
+  maxScoreSnapshot      Int
+  score                 Float
+  weightedScore         Float
+  remarks               String?
+  createdAt             DateTime @default(now())
+
+  evaluation Evaluation         @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  criterion  EvaluationCriteria @relation(fields: [criterionId], references: [id])
+
+  @@index([evaluationId])
+  @@index([criterionId])
+}
+
+model RatingThreshold {
+  id          String @id @default(uuid())
+  grade       String @unique
+  minScore    Float
+  maxScore    Float
+  description String
+  badgeStyle  String
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  userRole   String
+  userEmail  String
+  action     String   // e.g. "CONTRACT_CREATED", "EIC_ASSIGNED", "EVALUATION_SUBMITTED"
+  entityType String   // "PO_LOA" | "EVALUATION" | "VENDOR" | "EIC" | "USER"
+  entityId   String
+  oldValue   String?
+  newValue   String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // "CONTRACT_ASSIGNMENT" | "EVALUATION_PENDING" | "EVALUATION_SUBMITTED" | "EVALUATION_APPROVED" | "EVALUATION_RETURNED" | "CONTRACT_EXPIRY_WARNING"
+  isRead    Boolean  @default(false)
+  actionUrl String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
